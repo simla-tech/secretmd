@@ -1,14 +1,24 @@
 secretmd — утилита для шифрования секретов перед сохранением в репозиторий, а также для рендеринга Markdown-шаблонов с автоматической расшифровкой секретов.
 
+- [Криптосхема (как устроено шифрование)](#криптосхема-как-устроено-шифрование)
+- [Плейсхолдеры в Markdown](#плейсхолдеры-в-markdown)
+- [Команды](#команды)
+  - [Encrypt](#encrypt)
+  - [Decrypt](#decrypt)
+  - [Render](#render)
+- [Примеры](#примеры)
+- [Компиляция secretmd](#компиляция-secretmd)
+- [Генерация ключей](#генерация-ключей)
+
 ## Криптосхема (как устроено шифрование)
 
-1) Входной файл (например, `secrets.yaml`) (plaintext) читается как набор байт (как есть).  
+1) Входной файл (например, `secrets.yaml`) (plaintext) читается в бинарном режиме.  
 2) Генерируется случайный симметричный ключ `dataKey` (32 байта) для AES-256.  
 3) Весь plaintext шифруется симметричным `AES-256-GCM` → получается `ct` (*ciphertext + authentication tag*).  
 4) `dataKey` "оборачивается" (шифруется) публичным RSA ключом через `RSA-OAEP-SHA256` → получается `ek`.  
 5) Результат сохраняется в YAML-файл (например, `secrets.enc.yaml`) в виде "конверта" со следующими полями:
 
-- `v`: версия формата (сейчас 1)  
+- `v`: версия формата
 - `alg`: алгоритм (`RSA-OAEP-SHA256+AES-256-GCM`)  
 - `ek`: `base64( RSA-OAEP(pub, dataKey) )`  
 - `nonce`: `base64( nonce для AES-GCM )`  
@@ -27,19 +37,20 @@ secretmd — утилита для шифрования секретов пер�
 ### Encrypt
 
 ```
-secretmd encrypt --in <PLAINTEXT_YAML> --out <ENCRYPTED_YAML> (--pub <PUBLIC_PEM> | --priv <PRIVATE_PEM>)
+secretmd encrypt --in <PLAINTEXT_FILE> --out <ENCRYPTED_FILE> (--pub <PUBLIC_PEM> | --priv <PRIVATE_PEM>)
 ```
 
-Шифрует plaintext YAML в encrypted YAML.  
-Рекомендуется использовать `--pub` (публичный ключ). Если указан только `--priv`, публичный ключ будет взят из приватного.
+Шифрует plaintext файл.  
+Рекомендуется использовать `--pub` (публичный ключ). 
+Если указан только `--priv`, публичный ключ будет взят из приватного.
 
 ### Decrypt
 
 ```
-secretmd decrypt --in <ENCRYPTED_YAML> --out <PLAINTEXT_YAML> --priv <PRIVATE_PEM>
+secretmd decrypt --in <ENCRYPTED_FILE> --out <PLAINTEXT_FILE> --priv <PRIVATE_PEM>
 ```
 
-Дешифрует encrypted YAML в plaintext YAML.
+Дешифрует зашифрованный файл в plaintext.
 
 ### Render
 
@@ -47,7 +58,7 @@ secretmd decrypt --in <ENCRYPTED_YAML> --out <PLAINTEXT_YAML> --priv <PRIVATE_PE
 secretmd render --docs <DOCS_DIR> --secrets <ENCRYPTED_YAML> --out <OUT_DIR> --priv <PRIVATE_PEM>
 ```
 
-Подставляет секреты в Markdown-файлы из `DOCS_DIR` по плейсхолдерам и пишет результат в `OUT_DIR`.
+Подставляет секреты из зашифрованного YAML-файла в Markdown-файлы из `DOCS_DIR` (включая вложенные папки) по плейсхолдерам и пишет результат в `OUT_DIR`. 
 
 ## Примеры
 
@@ -67,6 +78,8 @@ secretmd decrypt --in secrets.enc.yaml --out secrets.dec.yaml --priv keys/key.pr
 
 ## Компиляция secretmd
 
+Для компиляции проекта требуется установка GO (https://go.dev/doc/install).
+
 ```bash
 # Linux amd64
 GOOS=linux GOARCH=amd64 go build -o dist/secretmd-linux-amd64 ./cmd/secretmd
@@ -77,6 +90,7 @@ GOOS=darwin GOARCH=arm64 go build -o dist/secretmd-darwin-arm64 ./cmd/secretmd
 # Windows amd64
 GOOS=windows GOARCH=amd64 go build -o dist/secretmd-windows-amd64.exe ./cmd/secretmd
 ```
+Уже скомпилированные бинарники есть в папке dist.
 
 ## Генерация ключей
 

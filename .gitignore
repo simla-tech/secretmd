@@ -8,6 +8,10 @@
 *.so
 *.dylib
 
+# Keep release artifacts in dist/
+!/dist/
+!/dist/**
+
 # Test binary, built with `go test -c`
 *.test
 
